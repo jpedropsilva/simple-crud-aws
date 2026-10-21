@@ -13,3 +13,13 @@ spring:
     properties:
       hibernate:
         format_sql: true
+
+# Actuator Configuration for Local Development
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health, info # Expose health and info endpoints over HTTP
+  endpoint:
+    health:
+      show-details: always    # Show full component details (DB, disk space, etc.) locally
