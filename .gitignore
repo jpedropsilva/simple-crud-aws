@@ -37,3 +37,4 @@ build/
 *.tfstate
 *.tfstate.backup
 /aws/
+/terraform/aws/terraform.tfvars
