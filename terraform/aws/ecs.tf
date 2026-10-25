@@ -29,34 +29,34 @@ resource "aws_ecs_task_definition" "app" {
 
       environment = [
         {
-          name  = "DB_HOST"
+          name = "DB_HOST"
           # value = "your-rds-endpoint.eu-west-3.rds.amazonaws.com"
-          value = "h2"
+          value = "${aws_db_instance.postgres.address}"
         },
         {
-          name  = "DB_PORT"
-          # value = "5432"
-          value = "mem"
+          name = "DB_PORT"
+          value = "5432"
+          # value = "mem"
         },
         {
           name  = "DB_NAME"
-          value = "mydb"
+          value = "simple_crud_db"
           # value = "your_database_name"
         },
         {
-          name  = "DB_USER"
-          # value = "your_database_user"
-          alue = "sa"
+          name = "DB_USER"
+          value = "simple_crud_user"
+          # value = "sa"
         }
       ]
 
-#       ## Best Practice: Use ECS secrets for sensitive data like passwords
-#       secrets = [
-#         {
-#           name      = "DB_PASSWORD"
-#           valueFrom = "arn:aws:ssm:eu-west-3:750686145863:/dev/db/simpleCrud/password"
-#         }
-#       ]
+      ## Best Practice: Use ECS secrets for sensitive data like passwords
+      secrets = [
+        {
+          name      = "DB_PASSWORD"
+          valueFrom = "arn:aws:secretsmanager:eu-west-3:750686145863:secret:/dev/db/simpleCrud-wsX3OC:password::"
+        }
+      ]
     }
   ])
 }
