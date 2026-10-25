@@ -1,31 +1,31 @@
 spring:
   application:
     name: simple-crud-aws
-#  datasource:
-#    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:postgres}
-#    username: ${DB_USER:postgres}
-#    password: ${DB_PASSWORD:postgrespassword}
-#    driver-class-name: org.postgresql.Driver
-#  jpa:
-#    hibernate:
-#      ddl-auto: update
-#    show-sql: true
-#    properties:
-#      hibernate:
-#        format_sql: true
   datasource:
-    url: jdbc:${DB_HOST:h2}:${DB_PORT:mem}:${DB_NAME:mydb}
-    username: ${DB_USER:sa}
-    password: ${DB_PASSWORD:password}
-    driverClassName: org.h2.Driver
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:simple_crud_db}
+    username: ${DB_USER:simple_crud_user}
+    password: ${DB_PASSWORD:postgrespassword}
+    driver-class-name: org.postgresql.Driver
   jpa:
-    database-platform: org.hibernate.dialect.H2Dialect
     hibernate:
       ddl-auto: update
-      show-sql: true
-      properties:
-        hibernate:
-          format_sql: true
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+#  datasource:
+#    url: jdbc:${DB_HOST:h2}:${DB_PORT:mem}:${DB_NAME:mydb}
+#    username: ${DB_USER:sa}
+#    password: ${DB_PASSWORD:password}
+#    driverClassName: org.h2.Driver
+#  jpa:
+#    database-platform: org.hibernate.dialect.H2Dialect
+#    hibernate:
+#      ddl-auto: update
+#      show-sql: true
+#      properties:
+#        hibernate:
+#          format_sql: true
 
 # Actuator Configuration for Local Development
 management:

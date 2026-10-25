@@ -3,8 +3,8 @@ services:
     image: postgres:18
     container_name: postgres-simple-crud
     environment:
-      POSTGRES_DB: postgres
-      POSTGRES_USER: postgres
+      POSTGRES_DB: simple_crud_db
+      POSTGRES_USER: simple_crud_user
       POSTGRES_PASSWORD: postgrespassword
     ports:
       - "5432:5432"
@@ -24,8 +24,8 @@ services:
     environment:
       DB_HOST: postgres
       DB_PORT: 5432
-      DB_NAME: postgres
-      DB_USER: postgres
+      DB_NAME: simple_crud_db
+      DB_USER: simple_crud_user
       DB_PASSWORD: postgrespassword
     depends_on:
       - postgres
