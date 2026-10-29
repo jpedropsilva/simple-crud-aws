@@ -1,4 +1,7 @@
-
+resource "aws_cloudwatch_log_group" "ecs" {
+  name              = "/ecs/simple-crud"
+  retention_in_days = 7
+}
 resource "aws_ecs_cluster" "main" {
   name = "simple-crud-cluster"
 }
@@ -16,9 +19,18 @@ resource "aws_ecs_task_definition" "app" {
   container_definitions = jsonencode([
     {
       name  = "simple-crud"
-      image = "750686145863.dkr.ecr.eu-west-3.amazonaws.com/simple-crud:latest"
+      image = "750686145863.dkr.ecr.eu-west-3.amazonaws.com/simple-crud:47603ffa06653762afdf22ad8c5a073096bb1170"
 
       essential = true
+
+      logConfiguration = {
+        logDriver = "awslogs"
+        options = {
+          "awslogs-group"         = aws_cloudwatch_log_group.ecs.name
+          "awslogs-region"        = "eu-west-3"
+          "awslogs-stream-prefix" = "ecs"
+        }
+      }
 
       portMappings = [
         {
@@ -34,7 +46,7 @@ resource "aws_ecs_task_definition" "app" {
           value = "${aws_db_instance.postgres.address}"
         },
         {
-          name = "DB_PORT"
+          name  = "DB_PORT"
           value = "5432"
           # value = "mem"
         },
@@ -44,7 +56,7 @@ resource "aws_ecs_task_definition" "app" {
           # value = "your_database_name"
         },
         {
-          name = "DB_USER"
+          name  = "DB_USER"
           value = "simple_crud_user"
           # value = "sa"
         }
