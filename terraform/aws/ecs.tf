@@ -19,7 +19,7 @@ resource "aws_ecs_task_definition" "app" {
   container_definitions = jsonencode([
     {
       name  = "simple-crud"
-      image = "750686145863.dkr.ecr.eu-west-3.amazonaws.com/simple-crud:47603ffa06653762afdf22ad8c5a073096bb1170"
+      image = "750686145863.dkr.ecr.eu-west-3.amazonaws.com/simple-crud:8472d2cf77def1468a7ebbc49b780246cb4d1119"
 
       essential = true
 
@@ -57,7 +57,7 @@ resource "aws_ecs_task_definition" "app" {
         },
         {
           name  = "DB_USER"
-          value = "simple_crud_user"
+          value = var.db_username
           # value = "sa"
         }
       ]
