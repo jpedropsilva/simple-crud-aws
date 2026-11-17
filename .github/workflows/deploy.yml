@@ -1,9 +1,17 @@
 name: Deploy to ECS
 
 on:
+  pull_request:
+    branches:
+      - main
   push:
     branches:
       - main
+
+# Never run two deploys of the same branch at the same time
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 env:
   AWS_REGION: eu-west-3
@@ -13,81 +21,98 @@ env:
   ECS_TASK_DEFINITION: simple-crud-task
 
 jobs:
-  deploy:
+  test:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Set up Java 25
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "25"
+          cache: maven
+          cache-dependency-path: app/pom.xml
+
+      - name: Run tests
+        working-directory: app
+        run: mvn -B verify
+
+  deploy:
+    needs: test
+    # Only deploy merged code, never pull requests
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write # required to request the OIDC token for AWS
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # Short-lived credentials through OIDC (role defined in terraform/aws/github-oidc.tf).
+      # No long-lived AWS access keys are stored in GitHub.
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
           aws-region: ${{ env.AWS_REGION }}
 
       - name: Login to Amazon ECR
+        id: login-ecr
         uses: aws-actions/amazon-ecr-login@v2
 
-      - name: Build Docker image
+      - name: Build and push Docker image
+        env:
+          IMAGE: ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:${{ github.sha }}
         run: |
-          docker build \
-            --build-arg APP_VERSION=${GITHUB_SHA::7} \
-            -t $ECR_REPOSITORY:${{ github.sha }} ./app
+          docker build -t "$IMAGE" ./app
+          docker push "$IMAGE"
 
-      - name: Tag Docker image
-        run: |
-          docker tag $ECR_REPOSITORY:${{ github.sha }} \
-          ${{ secrets.ECR_REGISTRY }}/$ECR_REPOSITORY:${{ github.sha }}
-
-      - name: Push Docker image to ECR
-        run: |
-          docker push \
-          ${{ secrets.ECR_REGISTRY }}/$ECR_REPOSITORY:${{ github.sha }}
-
-      - name: Download current ECS task definition
+      - name: Register new task definition with the new image
+        id: task-def
+        env:
+          IMAGE: ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:${{ github.sha }}
         run: |
           aws ecs describe-task-definition \
-            --task-definition $ECS_TASK_DEFINITION \
+            --task-definition "$ECS_TASK_DEFINITION" \
             --query taskDefinition \
-            > task-definition.json
+          | jq --arg IMAGE "$IMAGE" \
+            '.containerDefinitions[0].image = $IMAGE
+            | del(
+                .taskDefinitionArn,
+                .revision,
+                .status,
+                .requiresAttributes,
+                .compatibilities,
+                .registeredAt,
+                .registeredBy
+              )' \
+            > new-task-definition.json
 
-      - name: Update ECS task definition image
-        run: |
-          cat task-definition.json | jq \
-          --arg IMAGE "${{ secrets.ECR_REGISTRY }}/$ECR_REPOSITORY:${{ github.sha }}" \
-          '.containerDefinitions[0].image = $IMAGE
-          | del(
-              .taskDefinitionArn,
-              .revision,
-              .status,
-              .requiresAttributes,
-              .compatibilities,
-              .registeredAt,
-              .registeredBy
-            )' \
-          > new-task-definition.json
-
-      - name: Register new ECS task definition
-        run: |
-          aws ecs register-task-definition \
-            --cli-input-json file://new-task-definition.json
-
-      - name: Get latest task definition revision
-        id: task-def
-        run: |
-          REVISION=$(aws ecs describe-task-definition \
-            --task-definition $ECS_TASK_DEFINITION \
-            --query 'taskDefinition.revision' \
+          ARN=$(aws ecs register-task-definition \
+            --cli-input-json file://new-task-definition.json \
+            --query 'taskDefinition.taskDefinitionArn' \
             --output text)
 
-          echo "revision=$REVISION" >> $GITHUB_OUTPUT
+          echo "arn=$ARN" >> "$GITHUB_OUTPUT"
 
       - name: Deploy ECS service
         run: |
           aws ecs update-service \
-            --cluster $ECS_CLUSTER \
-            --service $ECS_SERVICE \
-            --task-definition ${ECS_TASK_DEFINITION}:${{ steps.task-def.outputs.revision }} \
-            --force-new-deployment
+            --cluster "$ECS_CLUSTER" \
+            --service "$ECS_SERVICE" \
+            --task-definition "${{ steps.task-def.outputs.arn }}" \
+            > /dev/null
+
+      # Fail the workflow if the new tasks never become healthy
+      - name: Wait for service to become stable
+        run: |
+          aws ecs wait services-stable \
+            --cluster "$ECS_CLUSTER" \
+            --services "$ECS_SERVICE"
