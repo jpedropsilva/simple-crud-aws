@@ -18,8 +18,10 @@ resource "aws_ecs_task_definition" "app" {
 
   container_definitions = jsonencode([
     {
-      name  = "simple-crud"
-      image = "750686145863.dkr.ecr.eu-west-3.amazonaws.com/simple-crud:8472d2cf77def1468a7ebbc49b780246cb4d1119"
+      name = "simple-crud"
+      # Only the initial image. After the first apply, GitHub Actions registers new
+      # revisions with the image it built (see lifecycle block in service.tf).
+      image = var.initial_container_image
 
       essential = true
 
@@ -36,10 +38,19 @@ resource "aws_ecs_task_definition" "app" {
         {
           containerPort = 8080
           hostPort      = 8080
+        },
+        {
+          # Spring Boot actuator (management port), used only by the ALB health check
+          containerPort = 9090
+          hostPort      = 9090
         }
       ]
 
       environment = [
+        {
+          name  = "SPRING_PROFILES_ACTIVE"
+          value = "deploy"
+        },
         {
           name = "DB_HOST"
           # value = "your-rds-endpoint.eu-west-3.rds.amazonaws.com"
