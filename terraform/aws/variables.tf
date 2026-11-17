@@ -13,3 +13,15 @@ variable "db_username" {
 variable "domain_name" {
   type = string
 }
+
+variable "initial_container_image" {
+  description = "Image used for the first task definition. Later deploys are done by GitHub Actions."
+  type        = string
+  default     = "750686145863.dkr.ecr.eu-west-3.amazonaws.com/simple-crud:8472d2cf77def1468a7ebbc49b780246cb4d1119"
+}
+
+variable "github_repository" {
+  description = "GitHub repository (owner/name) allowed to deploy through OIDC"
+  type        = string
+  default     = "jpedropsilva/simple-crud-aws"
+}

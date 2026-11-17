@@ -90,6 +90,17 @@ resource "aws_security_group" "web" {
     ]
   }
 
+  # ALB health check on the Spring Boot management port
+  ingress {
+    from_port = 9090
+    to_port   = 9090
+    protocol  = "tcp"
+
+    security_groups = [
+      aws_security_group.alb.id
+    ]
+  }
+
   egress {
     from_port = 0
     to_port   = 0

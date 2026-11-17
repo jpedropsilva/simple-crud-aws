@@ -16,6 +16,10 @@ spring:
 
 # Actuator Configuration for Production
 management:
+  endpoints:
+    web:
+      exposure:
+        include: health # Only the health endpoint is needed in production (ALB health check)
   endpoint:
     health:
       show-details: when-authorized # Only show details if the user is authenticated (or hide them completely with `never`)

@@ -19,8 +19,12 @@ resource "aws_lb_target_group" "app" {
 
   vpc_id = aws_vpc.main.id
 
+  # Actuator runs on the management port 9090 (application-deploy.yaml),
+  # which the ALB can reach but which is not exposed through the listeners.
   health_check {
-    path = "/actuator/health"
+    path    = "/actuator/health"
+    port    = "9090"
+    matcher = "200"
   }
 }
 

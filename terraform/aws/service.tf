@@ -7,12 +7,17 @@ resource "aws_ecs_service" "app" {
 
   launch_type = "FARGATE"
 
-  # Ignora o deploy do container definition
-  # lifecycle {
-  #   ignore_changes = [
-  #     task_definition
-  #   ]
-  # }
+  # Spring Boot needs time to start before the ALB health check counts failures.
+  health_check_grace_period_seconds = 90
+
+  # GitHub Actions owns which task definition revision (i.e. which image) is running.
+  # Without this, every `terraform apply` would roll the service back to the
+  # image defined in ecs.tf, undoing the last CI deploy.
+  lifecycle {
+    ignore_changes = [
+      task_definition
+    ]
+  }
 
   network_configuration {
     subnets = [
