@@ -52,14 +52,6 @@ jobs:
       id-token: write # required to request the OIDC token for AWS
 
     steps:
-      - name: Inspect OIDC Token Claims
-        run: |
-          AUDIENCE="sts.amazonaws.com"
-          TOKEN=$(curl -sS -H "Authorization: bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
-            "$ACTIONS_ID_TOKEN_REQUEST_URL&audience=$AUDIENCE" | jq -r '.value')
-          # Decode and inspect the JWT payload
-          echo "$TOKEN" | jq -R 'split(".") | .[1] | @base64d | fromjson'
-
       - name: Checkout repository
         uses: actions/checkout@v4
 
