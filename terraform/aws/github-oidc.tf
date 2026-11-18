@@ -35,7 +35,7 @@ resource "aws_iam_role" "github_actions_deploy" {
           StringEquals = {
             "token.actions.githubusercontent.com:aud" = "sts.amazonaws.com"
             # Only workflows running on the main branch of this repository
-            "token.actions.githubusercontent.com:sub" = "repo:${var.github_repository}:ref:refs/heads/main"
+            "token.actions.githubusercontent.com:sub" = "repo:jpedropsilva*/simple-crud-aws*:ref:refs/heads/main"
           }
         }
       }
