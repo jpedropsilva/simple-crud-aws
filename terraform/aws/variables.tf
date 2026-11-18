@@ -25,3 +25,9 @@ variable "github_repository" {
   type        = string
   default     = "jpedropsilva/simple-crud-aws"
 }
+
+variable "github_oidc_subject" {
+  description = "Exact 'sub' claim of the GitHub OIDC token allowed to deploy"
+  type        = string
+  default     = "repo:jpedropsilva@20337098/simple-crud-aws@1425747056:ref:refs/heads/main"
+}

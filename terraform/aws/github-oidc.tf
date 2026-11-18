@@ -34,9 +34,7 @@ resource "aws_iam_role" "github_actions_deploy" {
         Condition = {
           StringEquals = {
             "token.actions.githubusercontent.com:aud" = "sts.amazonaws.com"
-          }
-          StringLike = {
-            "token.actions.githubusercontent.com:sub" = "repo:jpedropsilva*/simple-crud-aws*:ref:refs/heads/main"
+            "token.actions.githubusercontent.com:sub" = var.github_oidc_subject
           }
         }
       }
